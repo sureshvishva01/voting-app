@@ -1,13 +1,14 @@
 services:
   ui:
-    image: voting-app-ui:local
+    image: rssureshkumar/voting-app:vote
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
     ports:
-      - "80:80"
+      - "5000:80"
     networks:
       - vote-net
-    deploy:
-      replicas: 1
-
   vote:
     image: rssureshkumar/voting-app-vote:latest
     ports:
