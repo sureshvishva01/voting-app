@@ -1,84 +1,79 @@
+version: "3.8"
+
 services:
-  ui:
-    image: rssureshkumar/voting-app:vote
+  vote:
+    image: rssureshkumar/voting-app-vote:arm64
     deploy:
-      replicas: 3
+      replicas: 2
       restart_policy:
         condition: on-failure
     ports:
       - "5000:80"
     networks:
       - vote-net
-  vote:
-    image: rssureshkumar/voting-app-vote:latest
-    ports:
-      - "5005:8080"
-    environment:
-      - REDIS_URL=redis://redis:6379
-    networks:
-      - vote-net
-    deploy:
-      replicas: 2
-      restart_policy:
-        condition: on-failure
 
   result:
-    image: rssureshkumar/voting-app-result:latest
-    ports:
-      - "5001:8080"
-    networks:
-      - vote-net
+    image: rssureshkumar/voting-app-result:arm64
     deploy:
       replicas: 1
-
-  worker:
-    image: rssureshkumar/voting-app-worker:latest
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "5001:80"
     networks:
       - vote-net
+
+  ui:
+    image: rssureshkumar/voting-app-ui:arm64
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "5002:80"
+    networks:
+      - vote-net
+
+  worker:
+    image: rssureshkumar/voting-app-worker:arm64
     deploy:
       mode: global
       restart_policy:
         condition: on-failure
+    networks:
+      - vote-net
 
   redis:
     image: redis:alpine
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - vote-net
-    volumes:
-      - redis-data:/data
-    deploy:
-      placement:
-        constraints: [node.role == manager]
 
   db:
     image: mysql:8
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: votes
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: voteapp
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - vote-net
-    volumes:
-      - vote-db-data:/var/lib/mysql
-    deploy:
-      placement:
-        constraints: [node.role == manager]
 
   visualizer:
-    image: dockersamples/visualizer:stable
+    image: dockersamples/visualizer:latest
     ports:
-      - "8082:8080"
-    networks:
-      - vote-net
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
       placement:
         constraints: [node.role == manager]
 
 networks:
   vote-net:
-    external: true
-
-volumes:
-  vote-db-data:
-    external: true
-  redis-data:
-    external: true
+    driver: overlay
