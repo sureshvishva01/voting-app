@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   vote:
     image: rssureshkumar/voting-app-vote:arm64
@@ -7,8 +5,12 @@ services:
       replicas: 2
       restart_policy:
         condition: on-failure
-    ports:
-      - "5000:80"
+      endpoint_mode: dnsrr
+      ports:
+        - target: 80
+          published: 5000
+          protocol: tcp
+          mode: host
     networks:
       - vote-net
 
@@ -18,8 +20,12 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-    ports:
-      - "5001:80"
+      endpoint_mode: dnsrr
+      ports:
+        - target: 80
+          published: 5001
+          protocol: tcp
+          mode: host
     networks:
       - vote-net
 
@@ -29,8 +35,12 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-    ports:
-      - "80:80"
+      endpoint_mode: dnsrr
+      ports:
+        - target: 80
+          published: 5002
+          protocol: tcp
+          mode: host
     networks:
       - vote-net
 
@@ -67,12 +77,15 @@ services:
   visualizer:
     image: alexellis2/visualizer-arm:latest
     ports:
-        - "8080:8080"
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
     volumes:
-        - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
-        placement:
-            constraints: [node.role == manager]
+      placement:
+        constraints: [node.role == manager]
 
 networks:
   vote-net:
