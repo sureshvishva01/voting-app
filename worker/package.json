@@ -1,0 +1,10 @@
+{
+  "name": "worker",
+  "version": "1.0.0",
+  "main": "worker.js",
+  "scripts": { "start": "node worker.js" },
+  "dependencies": {
+    "redis": "^4.6.7",
+    "mysql2": "^3.6.0"
+  }
+}

@@ -1,0 +1,83 @@
+services:
+  ui:
+    image: voting-app-ui:local
+    ports:
+      - "80:80"
+    networks:
+      - vote-net
+    deploy:
+      replicas: 1
+
+  vote:
+    image: rssureshkumar/voting-app-vote:latest
+    ports:
+      - "5005:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - vote-net
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
+  result:
+    image: rssureshkumar/voting-app-result:latest
+    ports:
+      - "5001:8080"
+    networks:
+      - vote-net
+    deploy:
+      replicas: 1
+
+  worker:
+    image: rssureshkumar/voting-app-worker:latest
+    networks:
+      - vote-net
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:alpine
+    networks:
+      - vote-net
+    volumes:
+      - redis-data:/data
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: votes
+    networks:
+      - vote-net
+    volumes:
+      - vote-db-data:/var/lib/mysql
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8082:8080"
+    networks:
+      - vote-net
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  vote-net:
+    external: true
+
+volumes:
+  vote-db-data:
+    external: true
+  redis-data:
+    external: true
