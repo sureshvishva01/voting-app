@@ -65,13 +65,13 @@ services:
       - vote-net
 
   visualizer:
-    image: dockersamples/visualizer:latest
+    image: alexellis2/visualizer-arm:latest
     ports:
-      - "8080:8080"
+        - "8080:8080"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
+        - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
-      placement:
+        placement:
         constraints: [node.role == manager]
 
 networks:
