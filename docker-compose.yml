@@ -1,83 +1,96 @@
 services:
-  ui:
-    image: rssureshkumar/voting-app-ui:latest
-    ports:
-      - "5000:80"
-    networks:
-      - vote-net
-    deploy:
-      replicas: 1
-
   vote:
     image: rssureshkumar/voting-app-vote:latest
-    ports:
-      - "5005:8080"
-    environment:
-      - REDIS_URL=redis://redis:6379
-    networks:
-      - vote-net
     deploy:
       replicas: 2
       restart_policy:
         condition: on-failure
+    ports:
+      - "5000:80"
+    networks:
+      - backend
 
   result:
     image: rssureshkumar/voting-app-result:latest
-    ports:
-      - "5001:8080"
-    networks:
-      - vote-net
     deploy:
       replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "5001:80"
+    networks:
+      - backend
+
+  ui:
+    image: rssureshkumar/voting-app-ui:latest
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8080:80"
+    networks:
+      - frontend
 
   worker:
     image: rssureshkumar/voting-app-worker:latest
-    networks:
-      - vote-net
     deploy:
       mode: global
       restart_policy:
         condition: on-failure
+    networks:
+      - frontend
+      - backend
 
   redis:
     image: redis:alpine
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "6379:6379"
     networks:
-      - vote-net
+      - frontend
     volumes:
       - redis-data:/data
-    deploy:
-      placement:
-        constraints: [node.role == manager]
 
   db:
     image: mysql:8
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: votes
-    networks:
-      - vote-net
-    volumes:
-      - vote-db-data:/var/lib/mysql
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: voteapp
     deploy:
+      replicas: 1
       placement:
         constraints: [node.role == manager]
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "3306:3306"
+    networks:
+      - backend
+    volumes:
+      - db-data:/var/lib/mysql
 
   visualizer:
-    image: dockersamples/visualizer:stable
+    image: dockersamples/visualizer:latest
     ports:
-      - "8082:8080"
-    networks:
-      - vote-net
+      - "8081:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
       placement:
         constraints: [node.role == manager]
 
 networks:
-  vote-net:
-    external: true
+  frontend:
+    driver: overlay
+  backend:
+    driver: overlay
 
 volumes:
-  vote-db-data:
-    external: true
   redis-data:
-    external: true
+    driver: local
+  db-data:
+    driver: local
