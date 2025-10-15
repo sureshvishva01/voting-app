@@ -2,34 +2,27 @@ version: "3.8"
 
 services:
   vote:
-    build: ./vote
     image: rssureshkumar/voting-app-vote:latest
-    ports:
-      - "5000:5000"
     networks:
       - backend
     deploy:
-      replicas: 2
+      replicas: 3   # scalable
       restart_policy:
         condition: on-failure
 
   result:
-    build: ./result
     image: rssureshkumar/voting-app-result:latest
-    ports:
-      - "5001:5001"
     networks:
       - backend
     deploy:
-      replicas: 1
+      replicas: 2   # scalable
       restart_policy:
         condition: on-failure
 
   ui:
-    build: ./ui
     image: rssureshkumar/voting-app-ui:latest
     ports:
-      - "8080:80"
+      - "8080:80"   # only UI exposed externally
     networks:
       - frontend
     depends_on:
@@ -41,7 +34,6 @@ services:
         condition: on-failure
 
   worker:
-    build: ./worker
     image: rssureshkumar/voting-app-worker:latest
     networks:
       - backend
@@ -76,7 +68,7 @@ services:
   visualizer:
     image: dockersamples/visualizer:latest
     ports:
-      - "8081:8080"
+      - "8081:8080"   # only one manager node
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
