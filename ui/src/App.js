@@ -1,17 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-const VOTE_API = process.env.REACT_APP_API_BASE;       // e.g., http://<VM_IP>:5000
-const RESULT_API = process.env.REACT_APP_RESULT_BASE;  // e.g., http://<VM_IP>:5001
+const isDocker = window.location.hostname !== "localhost";
+
+const VOTE_API = isDocker
+  ? "/api/vote"
+  : "http://localhost:5000/api/vote";
+
+const RESULT_API = isDocker
+  ? "/api/results"
+  : "http://localhost:5001/api/results";
 
 export default function App() {
   const [results, setResults] = useState({ A: 0, B: 0 });
   const [loading, setLoading] = useState(false);
 
-  // Fetch results from the RESULT API
   const fetchResults = async () => {
     try {
-      const res = await axios.get(`${RESULT_API}/api/results`);
+      const res = await axios.get(RESULT_API);
       setResults(res.data);
     } catch (err) {
       console.error(err);
@@ -24,11 +30,10 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  // Submit a vote to the VOTE API
   const vote = async (option) => {
     try {
       setLoading(true);
-      await axios.post(`${VOTE_API}/api/vote`, { option });
+      await axios.post(VOTE_API, { option });
       await fetchResults();
     } catch (err) {
       console.error(err);

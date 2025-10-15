@@ -1,77 +1,77 @@
+version: "3.8"
+
 services:
   vote:
+    build: ./vote
     image: rssureshkumar/voting-app-vote:latest
+    ports:
+      - "5000:5000"
+    networks:
+      - backend
     deploy:
       replicas: 2
       restart_policy:
         condition: on-failure
-    ports:
-      - "5000:80"
-    networks:
-      - backend
 
   result:
+    build: ./result
     image: rssureshkumar/voting-app-result:latest
+    ports:
+      - "5001:5001"
+    networks:
+      - backend
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
-    ports:
-      - "5001:80"
-    networks:
-      - backend
 
   ui:
+    build: ./ui
     image: rssureshkumar/voting-app-ui:latest
-    deploy:
-      replicas: 2
-      restart_policy:
-        condition: on-failure
     ports:
       - "8080:80"
     networks:
       - frontend
+    depends_on:
+      - vote
+      - result
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
 
   worker:
+    build: ./worker
     image: rssureshkumar/voting-app-worker:latest
+    networks:
+      - backend
     deploy:
       mode: global
       restart_policy:
         condition: on-failure
-    networks:
-      - frontend
-      - backend
 
   redis:
     image: redis:alpine
+    networks:
+      - backend
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
-    ports:
-      - "6379:6379"
-    networks:
-      - frontend
-    volumes:
-      - redis-data:/data
 
   db:
     image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: voteapp
-    deploy:
-      replicas: 1
-      placement:
-        constraints: [node.role == manager]
-      restart_policy:
-        condition: on-failure
-    ports:
-      - "3306:3306"
-    networks:
-      - backend
     volumes:
       - db-data:/var/lib/mysql
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
   visualizer:
     image: dockersamples/visualizer:latest
@@ -82,6 +82,8 @@ services:
     deploy:
       placement:
         constraints: [node.role == manager]
+    networks:
+      - frontend
 
 networks:
   frontend:
@@ -90,7 +92,4 @@ networks:
     driver: overlay
 
 volumes:
-  redis-data:
-    driver: local
   db-data:
-    driver: local
